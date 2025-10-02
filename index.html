@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Webcam Sharer</title>
+    <style>
+        /* Basic CSS for styling and layout */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f2f5;
+            color: #333;
+        }
+        h1 {
+            color: #1a73e8;
+        }
+        #webcam-container {
+            margin-top: 20px;
+            border: 5px solid #ccc;
+            border-radius: 8px;
+            background-color: #000;
+            width: 90%;
+            max-width: 640px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        video {
+            width: 100%;
+            height: auto;
+            display: block;
+            border-radius: 4px;
+        }
+        button {
+            margin-top: 20px;
+            padding: 12px 25px;
+            font-size: 16px;
+            font-weight: bold;
+            color: #fff;
+            background-color: #1a73e8;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #1558b3;
+        }
+        #error-message {
+            color: red;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Webcam Sharing App 📸</h1>
+    <p>Click the button below to start your webcam.</p>
+
+    <button id="start-camera-btn">Start Camera</button>
+
+    <div id="webcam-container">
+        <video id="webcam-video" autoplay playsinline></video>
+    </div>
+    
+    <p id="error-message"></p>
+
+    <script>
+        // JavaScript to handle the webcam logic
+        const startCameraButton = document.getElementById('start-camera-btn');
+        const videoElement = document.getElementById('webcam-video');
+        const errorMessage = document.getElementById('error-message');
+
+        // Add an event listener to the button
+        startCameraButton.addEventListener('click', async () => {
+            // Clear any previous error messages
+            errorMessage.textContent = '';
+            
+            // Check if the browser supports the mediaDevices API
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                try {
+                    // Request access to the user's camera
+                    // The 'await' keyword pauses the function until the promise is resolved (user accepts/denies)
+                    const stream = await navigator.mediaDevices.getUserMedia({ 
+                        video: true, // We are requesting video access
+                        audio: false // We are not requesting audio access
+                    });
+                    
+                    // If access is granted, set the video element's source to the stream
+                    videoElement.srcObject = stream;
+                    console.log("Webcam stream started.");
+
+                } catch (error) {
+                    // If an error occurs (e.g., user denies permission)
+                    console.error("Error accessing webcam: ", error);
+                    let message = "Something went wrong. Please ensure you have a camera connected and have granted permission in your browser.";
+                    if (error.name === "NotAllowedError" || error.name === "PermissionDeniedError") {
+                        message = "Camera access was denied. Please allow camera access in your browser settings and try again. permission was denied.";
+                    }
+                    errorMessage.textContent = message;
+                }
+            } else {
+                // If the browser does not support the API
+                errorMessage.textContent = "Sorry, your browser does not support webcam access.";
+            }
+        });
+    </script>
+
+</body>
+</html>

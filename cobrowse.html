@@ -1,0 +1,164 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head profile="http://www.w3.org/2005/10/profile">
+    <title>CoBrowse Capability Demo </title>
+    <script type="text/javascript">
+        var urlParams = new URLSearchParams(window.location.search);
+
+        (function(w,t,c,p,s,e){p=new Promise(function(r){w[c]={client:function(){if(!s){
+        s=document.createElement(t);s.src='https://js.cobrowse.io/CobrowseIO.js';s.async=1;
+        e=document.getElementsByTagName(t)[0];e.parentNode.insertBefore(s,e);s.onload=function()
+        {r(w[c]);};}return p;}};});})(window,'script','CobrowseIO');
+
+        // FOR SECURITY REASONS DO NOT SET YOUR LICENSE KEY OR API USING QUERY PARAMETERS IN YOUR OWN APPLICATION
+        CobrowseIO.license = urlParams.get('license') || '0Blc4UGxQHHDNA'; // change to your license key
+        CobrowseIO.api = urlParams.get('api') || 'https://api.cobrowse.io';
+        CobrowseIO.client().then(function(){
+            CobrowseIO.start({allowIFrameStart:true});
+        });
+
+        // generateSupportCode();
+        function generateSupportCode() {
+          // ensure Cobrowse is loaded
+          CobrowseIO.client().then(function () {
+            // create a code and display it to the user
+            CobrowseIO.createSessionCode().then(function (code) {
+              document.getElementById('generate-button').style.display = 'none';
+              document.getElementById('support-code').innerHTML = '<p>Your Support Code is ' + code.substr(0, 3) + '-' + code.substr(3, 6) + '</p>';
+              CobrowseIO.currentSession.on('ended', function () {
+                onExpire();
+              })
+            });
+          });
+        }
+
+        function onExpire() {
+          console.log('Support code expired.');
+          document.getElementById('support-code').innerHTML = '<p>Support Code expired.</p>';
+          document.getElementById('generate-button').style.display = 'inline-block';
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Google Sans', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            font-size: 16px;
+            margin: 0;
+            padding: 0;
+            background-color: #fff;
+        }
+        .logo-header {
+            text-align: left;
+            padding: 10px 20px;
+        }
+        .logo-header img {
+            max-height: 40px;
+        }
+        .header {
+            background-image: linear-gradient(to right, rgb(0, 0, 0) 10%, rgb(0, 0, 0) 90%);
+            color: white;
+            text-align: center;
+            padding: 16px 0;
+            width: 100%;
+        }
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: white;
+            border-radius: 8px;
+        }
+        .support-code-container {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .support-code-container p {
+            font-size: 1.2em;
+            color: #00578a;
+        }
+        .generate-button {
+            background-color: #00578a;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .generate-button:hover {
+            background-color: #00426f;
+        }
+        .spacing {
+            height: 20px;
+        }
+        .quick-links {
+            padding: 20px;
+            border: 0px;
+            list-style: none;
+            display: block;
+            box-shadow: rgba(0, 0, 0, 0.25) 0px 2px 8px 0px;
+            border-radius: 4px;
+            background-color: rgb(255, 255, 255);
+            margin: 20px auto;
+            max-width: 350px;
+        }
+        .quick-links-nav {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin: 0px 4px 0px -16px;
+            list-style: none;
+            padding: 0;
+        }
+        .quick-links-nav li {
+            margin: 10px;
+            flex: 1 0 200px;
+        }
+        .quick-links-nav li a {
+            color: #00578a;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .quick-links-nav li a:hover {
+            text-decoration: underline;
+        }
+    </style>
+    <style type="text/css">
+        df-messenger {
+            --df-messenger-button-titlebar-color: #00578a;
+            --df-messenger-send-icon: #00578a;
+        }
+    </style>
+</head>
+<body>
+    <div class="logo-header">
+        <img src="https://www.gap.com/Asset_Archive/GPWeb/content/0030/015/725/assets/logo/logo_gap--dark.svg" alt="Gap Logo">
+    </div>
+    <div class="header">
+        <h1>Customer Service</h1>
+        <h3> Need us? We're here</h3>
+    </div>
+    <div class="container">
+        <div class="spacing"></div>
+        <div class="support-code-container" id="support-code">
+        </div>
+        <div style="text-align: center;">
+            <h2> Screen Share Support</h2>
+            <button class="generate-button" id="generate-button" onclick="generateSupportCode();">Generate Support Code</button>
+        </div>
+    </div>
+    <div class="quick-links" data-skyui-core="Box@11.1.2" class="sc-bqWxrE fsxbsb">
+        <h3 class="cs_header-b">Top Customer Questions</h3>
+        <nav class="quick-links-nav">
+            <li><a href="/customerService/info.do?cid=81264">How do I <strong>return or exchange</strong> an item?</a></li>
+            <li><a href="/customerService/info.do?cid=81266">What's the <strong>status of my order</strong>?</a></li>
+            <li><a href="/customerService/info.do?cid=81266">Can I <strong>track the shipment</strong> of my order?</a></li>
+            <li><a href="/customerService/info.do?cid=1192377">Can I <strong>change or cancel</strong> my order?</a></li>
+        </nav>
+    </div>
+</body>
+</html>

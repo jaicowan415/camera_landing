@@ -13,17 +13,14 @@
         e=document.getElementsByTagName(t)[0];e.parentNode.insertBefore(s,e);s.onload=function()
         {r(w[c]);};}return p;}};});})(window,'script','CobrowseIO');
 
-        // FOR SECURITY REASONS DO NOT SET YOUR LICENSE KEY OR API USING QUERY PARAMETERS IN YOUR OWN APPLICATION
-        CobrowseIO.license = urlParams.get('license') || '0Blc4UGxQHHDNA'; // change to your license key
+        CobrowseIO.license = urlParams.get('license') || '0Blc4UGxQHHDNA';
         CobrowseIO.api = urlParams.get('api') || 'https://api.cobrowse.io';
         CobrowseIO.client().then(function(){
             CobrowseIO.start({allowIFrameStart:true});
         });
 
         function generateSupportCode() {
-          // ensure Cobrowse is loaded
           CobrowseIO.client().then(function () {
-            // create a code and display it to the user
             CobrowseIO.createSessionCode().then(function (code) {
               document.getElementById('generate-button').style.display = 'none';
               document.getElementById('support-code').innerHTML = '<p>Your Support Code is ' + code.substr(0, 3) + '-' + code.substr(3, 6) + '</p>';
@@ -42,15 +39,13 @@
     </script>
     
     <style>
-        /* Original Styles */
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             display: flex;
             flex-direction: column;
             align-items: center;
-            /* Removed justify-content: center to allow content to flow from the top */
             padding-top: 2em;
-            height: auto; /* Changed from 100vh to allow scrolling */
+            height: auto;
             min-height: 100vh;
             margin: 0;
             background-color: #f0f2f5;
@@ -70,6 +65,7 @@
             max-width: 640px;
             box-shadow: 0 4px 8px rgba(0,0,0,0.1);
             aspect-ratio: 640 / 480;
+            position: relative; /* Needed to position the switch button inside */
         }
 
         #webcam-video {
@@ -81,6 +77,29 @@
             height: 100%;
             display: block;
             border-radius: 4px;
+        }
+        
+        /* NEW: Styles for the switch camera button */
+        #switch-camera-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            width: 45px;
+            height: 45px;
+            font-size: 24px;
+            background-color: rgba(0, 0, 0, 0.4);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            border-radius: 50%;
+            cursor: pointer;
+            display: none; /* Hidden by default */
+            z-index: 10;
+            line-height: 45px;
+            text-align: center;
+        }
+        
+        #switch-camera-btn:hover {
+            background-color: rgba(0, 0, 0, 0.6);
         }
 
         button {
@@ -104,10 +123,9 @@
             min-height: 1.2em;
         }
 
-        /* STYLES FROM UPLOADED FILE */
         .container {
             max-width: 800px;
-            margin: 40px auto 20px auto; /* Added top margin */
+            margin: 40px auto 20px auto;
             padding: 20px;
             background-color: white;
             border-radius: 8px;
@@ -123,19 +141,6 @@
         }
         .generate-button {
             background-color: #00578a;
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            font-size: 16px;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-        .generate-button:hover {
-            background-color: #00426f;
-        }
-        .spacing {
-            height: 20px;
         }
     </style>
 </head>
@@ -147,6 +152,7 @@
     <button id="start-camera-btn">Start Camera</button>
 
     <div id="webcam-container">
+        <button id="switch-camera-btn">🔄</button>
         <canvas id="webcam-canvas"></canvas>
     </div>
     
@@ -156,8 +162,7 @@
 
     <div class="container">
         <div class="spacing"></div>
-        <div class="support-code-container" id="support-code">
-        </div>
+        <div class="support-code-container" id="support-code"></div>
         <div style="text-align: center;">
             <h2> Camera Share Support</h2>
             <button class="generate-button" id="generate-button" onclick="generateSupportCode();">Generate Support Code</button>
@@ -166,54 +171,91 @@
 
     <script>
         const startCameraButton = document.getElementById('start-camera-btn');
+        const switchCameraButton = document.getElementById('switch-camera-btn');
         const videoElement = document.getElementById('webcam-video');
         const canvasElement = document.getElementById('webcam-canvas');
         const canvasContext = canvasElement.getContext('2d');
         const errorMessage = document.getElementById('error-message');
 
+        // NEW: Variables to manage camera state
+        let currentStream;
+        let facingMode = 'user'; // 'user' for front, 'environment' for back
+
+        // NEW: Check for multiple cameras and show the switch button if needed
+        async function checkForMultipleCameras() {
+            try {
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                const videoDevices = devices.filter(device => device.kind === 'videoinput');
+                if (videoDevices.length > 1) {
+                    switchCameraButton.style.display = 'block';
+                }
+            } catch (error) {
+                console.error("Error enumerating devices:", error);
+            }
+        }
+        
+        // NEW: Function to stop the current video stream
+        function stopCurrentStream() {
+            if (currentStream) {
+                currentStream.getTracks().forEach(track => {
+                    track.stop();
+                });
+            }
+        }
+
+        // NEW: Centralized function to start the camera
+        async function startCamera() {
+            stopCurrentStream();
+            errorMessage.textContent = '';
+
+            const constraints = {
+                video: {
+                    facingMode: facingMode,
+                    width: { ideal: 640 },
+                    height: { ideal: 480 }
+                },
+                audio: false
+            };
+
+            try {
+                currentStream = await navigator.mediaDevices.getUserMedia(constraints);
+                videoElement.srcObject = currentStream;
+            } catch (error) {
+                console.error("Error accessing webcam: ", error);
+                let message = `Could not access the ${facingMode === 'user' ? 'front' : 'back'} camera. Please ensure you have granted permission.`;
+                 if (error.name === "NotAllowedError" || error.name === "PermissionDeniedError") {
+                    message = "Camera access was denied. Please allow camera access in your browser settings and try again.";
+                }
+                errorMessage.textContent = message;
+            }
+        }
+
         function drawFrame() {
             if (videoElement.paused || videoElement.ended) {
                 return;
             }
-            canvasContext.drawImage(
-                videoElement, 
-                0, 
-                0, 
-                canvasElement.width, 
-                canvasElement.height
-            );
+            canvasContext.drawImage(videoElement, 0, 0, canvasElement.width, canvasElement.height);
             requestAnimationFrame(drawFrame);
         }
+        
+        // Event Listeners
+        startCameraButton.addEventListener('click', startCamera);
 
-        startCameraButton.addEventListener('click', async () => {
-            errorMessage.textContent = '';
-            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-                try {
-                    const stream = await navigator.mediaDevices.getUserMedia({ 
-                        video: { width: 640, height: 480 },
-                        audio: false
-                    });
-                    
-                    videoElement.srcObject = stream;
-
-                    videoElement.addEventListener('play', () => {
-                        canvasElement.width = videoElement.videoWidth;
-                        canvasElement.height = videoElement.videoHeight;
-                        drawFrame();
-                    });
-
-                } catch (error) {
-                    console.error("Error accessing webcam: ", error);
-                    let message = "Something went wrong. Please ensure you have a camera connected and have granted permission in your browser.";
-                    if (error.name === "NotAllowedError" || error.name === "PermissionDeniedError") {
-                        message = "Camera access was denied. Please allow camera access in your browser settings and try again.";
-                    }
-                    errorMessage.textContent = message;
-                }
-            } else {
-                errorMessage.textContent = "Sorry, your browser does not support webcam access.";
-            }
+        switchCameraButton.addEventListener('click', () => {
+            // Toggle between front and back camera
+            facingMode = (facingMode === 'user') ? 'environment' : 'user';
+            startCamera(); // Restart the camera with the new setting
         });
+        
+        videoElement.addEventListener('play', () => {
+            canvasElement.width = videoElement.videoWidth;
+            canvasElement.height = videoElement.videoHeight;
+            drawFrame();
+        });
+
+        // Check for cameras when the page loads
+        checkForMultipleCameras();
+
     </script>
 
 </body>

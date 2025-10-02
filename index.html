@@ -65,7 +65,7 @@
             max-width: 640px;
             box-shadow: 0 4px 8px rgba(0,0,0,0.1);
             aspect-ratio: 640 / 480;
-            position: relative; /* Needed to position the switch button inside */
+            position: relative;
         }
 
         #webcam-video {
@@ -79,31 +79,15 @@
             border-radius: 4px;
         }
         
-        /* NEW: Styles for the switch camera button */
-        #switch-camera-btn {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            width: 45px;
-            height: 45px;
-            font-size: 24px;
-            background-color: rgba(0, 0, 0, 0.4);
-            color: white;
-            border: 1px solid rgba(255, 255, 255, 0.5);
-            border-radius: 50%;
-            cursor: pointer;
-            display: none; /* Hidden by default */
-            z-index: 10;
-            line-height: 45px;
-            text-align: center;
-        }
-        
-        #switch-camera-btn:hover {
-            background-color: rgba(0, 0, 0, 0.6);
+        /* NEW: Container for the start buttons */
+        .button-container {
+            display: flex;
+            gap: 15px; /* Adds space between buttons */
+            margin-top: 20px;
         }
 
+        /* Generic styles for buttons */
         button {
-            margin-top: 20px;
             padding: 12px 25px;
             font-size: 16px;
             font-weight: bold;
@@ -147,12 +131,14 @@
 <body>
 
     <h1>Webcam Sharing App 📸</h1>
-    <p>Click the button below to render your webcam on the canvas.</p>
+    <p>Select which camera you would like to start.</p>
 
-    <button id="start-camera-btn">Start Camera</button>
+    <div class="button-container">
+        <button id="start-selfie-btn">📸 Selfie</button>
+        <button id="start-forward-btn">🏞️ Forward Facing</button>
+    </div>
 
     <div id="webcam-container">
-        <button id="switch-camera-btn">🔄</button>
         <canvas id="webcam-canvas"></canvas>
     </div>
     
@@ -170,31 +156,17 @@
     </div>
 
     <script>
-        const startCameraButton = document.getElementById('start-camera-btn');
-        const switchCameraButton = document.getElementById('switch-camera-btn');
+        // Get references to the new buttons
+        const startSelfieButton = document.getElementById('start-selfie-btn');
+        const startForwardButton = document.getElementById('start-forward-btn');
+        
         const videoElement = document.getElementById('webcam-video');
         const canvasElement = document.getElementById('webcam-canvas');
         const canvasContext = canvasElement.getContext('2d');
         const errorMessage = document.getElementById('error-message');
 
-        // NEW: Variables to manage camera state
         let currentStream;
-        let facingMode = 'user'; // 'user' for front, 'environment' for back
 
-        // NEW: Check for multiple cameras and show the switch button if needed
-        async function checkForMultipleCameras() {
-            try {
-                const devices = await navigator.mediaDevices.enumerateDevices();
-                const videoDevices = devices.filter(device => device.kind === 'videoinput');
-                if (videoDevices.length > 1) {
-                    switchCameraButton.style.display = 'block';
-                }
-            } catch (error) {
-                console.error("Error enumerating devices:", error);
-            }
-        }
-        
-        // NEW: Function to stop the current video stream
         function stopCurrentStream() {
             if (currentStream) {
                 currentStream.getTracks().forEach(track => {
@@ -203,14 +175,14 @@
             }
         }
 
-        // NEW: Centralized function to start the camera
-        async function startCamera() {
+        // MODIFIED: startCamera now accepts the desired facing mode
+        async function startCamera(facingMode) {
             stopCurrentStream();
             errorMessage.textContent = '';
 
             const constraints = {
                 video: {
-                    facingMode: facingMode,
+                    facingMode: facingMode, // Use the mode passed to the function
                     width: { ideal: 640 },
                     height: { ideal: 480 }
                 },
@@ -222,7 +194,8 @@
                 videoElement.srcObject = currentStream;
             } catch (error) {
                 console.error("Error accessing webcam: ", error);
-                let message = `Could not access the ${facingMode === 'user' ? 'front' : 'back'} camera. Please ensure you have granted permission.`;
+                let cameraName = (facingMode === 'user') ? 'Selfie' : 'Forward Facing';
+                let message = `Could not access the ${cameraName} camera. Please ensure you have granted permission.`;
                  if (error.name === "NotAllowedError" || error.name === "PermissionDeniedError") {
                     message = "Camera access was denied. Please allow camera access in your browser settings and try again.";
                 }
@@ -238,13 +211,13 @@
             requestAnimationFrame(drawFrame);
         }
         
-        // Event Listeners
-        startCameraButton.addEventListener('click', startCamera);
+        // NEW: Event listeners for each specific button
+        startSelfieButton.addEventListener('click', () => {
+            startCamera('user'); // 'user' is for the front-facing (selfie) camera
+        });
 
-        switchCameraButton.addEventListener('click', () => {
-            // Toggle between front and back camera
-            facingMode = (facingMode === 'user') ? 'environment' : 'user';
-            startCamera(); // Restart the camera with the new setting
+        startForwardButton.addEventListener('click', () => {
+            startCamera('environment'); // 'environment' is for the back-facing camera
         });
         
         videoElement.addEventListener('play', () => {
@@ -252,9 +225,6 @@
             canvasElement.height = videoElement.videoHeight;
             drawFrame();
         });
-
-        // Check for cameras when the page loads
-        checkForMultipleCameras();
 
     </script>
 

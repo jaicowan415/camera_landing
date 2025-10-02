@@ -15,27 +15,26 @@
 
         CobrowseIO.license = urlParams.get('license') || '0Blc4UGxQHHDNA';
         CobrowseIO.api = urlParams.get('api') || 'https://api.cobrowse.io';
+        
+        // MODIFIED: Code generation now runs automatically after initialization
         CobrowseIO.client().then(function(){
             CobrowseIO.start({allowIFrameStart:true});
-        });
+            
+            const supportCodeDisplay = document.getElementById('support-code-display');
 
-        function generateSupportCode() {
-          CobrowseIO.client().then(function () {
+            // Automatically create a session code and display it
             CobrowseIO.createSessionCode().then(function (code) {
-              document.getElementById('generate-button').style.display = 'none';
-              document.getElementById('support-code').innerHTML = '<p>Your Support Code is ' + code.substr(0, 3) + '-' + code.substr(3, 6) + '</p>';
+              supportCodeDisplay.textContent = 'Support Code: ' + code.substr(0, 3) + '-' + code.substr(3, 6);
+              
+              // Listen for when the session ends to update the message
               CobrowseIO.currentSession.on('ended', function () {
-                onExpire();
-              })
+                supportCodeDisplay.textContent = 'Your session has ended.';
+              });
+            }).catch(function(err){
+                console.error("Error creating session code:", err);
+                supportCodeDisplay.textContent = 'Could not generate a support code.';
             });
-          });
-        }
-
-        function onExpire() {
-          console.log('Support code expired.');
-          document.getElementById('support-code').innerHTML = '<p>Support Code expired.</p>';
-          document.getElementById('generate-button').style.display = 'inline-block';
-        }
+        });
     </script>
     
     <style>
@@ -52,8 +51,18 @@
             color: #333;
         }
 
+        /* NEW: Style for the support code display at the top */
+        #support-code-display {
+            font-size: 1.6em;
+            font-weight: bold;
+            color: #00578a;
+            margin-bottom: 20px;
+            min-height: 1.2em; /* Prevents layout shift */
+        }
+
         h1 {
             color: #1a73e8;
+            margin-top: 0;
         }
         
         #webcam-container {
@@ -79,14 +88,12 @@
             border-radius: 4px;
         }
         
-        /* NEW: Container for the start buttons */
         .button-container {
             display: flex;
-            gap: 15px; /* Adds space between buttons */
+            gap: 15px;
             margin-top: 20px;
         }
 
-        /* Generic styles for buttons */
         button {
             padding: 12px 25px;
             font-size: 16px;
@@ -106,29 +113,11 @@
             margin-top: 15px;
             min-height: 1.2em;
         }
-
-        .container {
-            max-width: 800px;
-            margin: 40px auto 20px auto;
-            padding: 20px;
-            background-color: white;
-            border-radius: 8px;
-            border: 1px solid #ddd;
-        }
-        .support-code-container {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-        .support-code-container p {
-            font-size: 1.2em;
-            color: #00578a;
-        }
-        .generate-button {
-            background-color: #00578a;
-        }
     </style>
 </head>
 <body>
+
+    <h2 id="support-code-display">Loading Support Code...</h2>
 
     <h1>Webcam Sharing App 📸</h1>
     <p>Select which camera you would like to start.</p>
@@ -146,20 +135,9 @@
     
     <p id="error-message"></p>
 
-    <div class="container">
-        <div class="spacing"></div>
-        <div class="support-code-container" id="support-code"></div>
-        <div style="text-align: center;">
-            <h2> Camera Share Support</h2>
-            <button class="generate-button" id="generate-button" onclick="generateSupportCode();">Generate Support Code</button>
-        </div>
-    </div>
-
     <script>
-        // Get references to the new buttons
         const startSelfieButton = document.getElementById('start-selfie-btn');
         const startForwardButton = document.getElementById('start-forward-btn');
-        
         const videoElement = document.getElementById('webcam-video');
         const canvasElement = document.getElementById('webcam-canvas');
         const canvasContext = canvasElement.getContext('2d');
@@ -175,14 +153,13 @@
             }
         }
 
-        // MODIFIED: startCamera now accepts the desired facing mode
         async function startCamera(facingMode) {
             stopCurrentStream();
             errorMessage.textContent = '';
 
             const constraints = {
                 video: {
-                    facingMode: facingMode, // Use the mode passed to the function
+                    facingMode: facingMode,
                     width: { ideal: 640 },
                     height: { ideal: 480 }
                 },
@@ -211,13 +188,12 @@
             requestAnimationFrame(drawFrame);
         }
         
-        // NEW: Event listeners for each specific button
         startSelfieButton.addEventListener('click', () => {
-            startCamera('user'); // 'user' is for the front-facing (selfie) camera
+            startCamera('user');
         });
 
         startForwardButton.addEventListener('click', () => {
-            startCamera('environment'); // 'environment' is for the back-facing camera
+            startCamera('environment');
         });
         
         videoElement.addEventListener('play', () => {
@@ -225,7 +201,6 @@
             canvasElement.height = videoElement.videoHeight;
             drawFrame();
         });
-
     </script>
 
 </body>
